@@ -1,8 +1,10 @@
 use bevy::prelude::*;
+use bevy_rapier2d::na::distance;
 use bevy_rapier2d::na::Point2;
 use bevy_rapier2d::physics::{JointBuilderComponent, RapierPhysicsPlugin};
 use bevy_rapier2d::rapier::dynamics::{BallJoint, RigidBodyBuilder};
 use bevy_rapier2d::rapier::geometry::ColliderBuilder;
+
 fn main() {
     App::build()
         .insert_resource(WindowDescriptor {
@@ -41,14 +43,14 @@ fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMater
     // Static rigid-body with a cuboid shape.
     let floor_body = RigidBodyBuilder::new_static().translation(floor_x, floor_y);
 
-    let floor_collider = ColliderBuilder::cuboid(floor_width / 2., floor_height / 2.);
+    // let floor_collider = ColliderBuilder::cuboid(floor_width / 2., floor_height / 2.);
 
     let floor_size = Vec2::new(floor_width, floor_height);
     let floor_material = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
 
     let floor = commands
         .spawn()
-        .insert_bundle((floor_body, floor_collider))
+        .insert_bundle((floor_body, ))
         .insert_bundle(SpriteBundle {
             material: floor_material,
             sprite: Sprite::new(floor_size),
@@ -57,8 +59,8 @@ fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMater
         .id();
 
     let ball_diameter = 10.;
-    let ball_x = -50.;
-    let ball_y = 100.0;
+    let ball_x = -90.;
+    let ball_y = 20.0;
 
     // Dynamic rigid-body with ball shape.
     let ball_body = RigidBodyBuilder::new_dynamic().translation(ball_x, ball_y);
@@ -78,7 +80,7 @@ fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMater
         .id();
 
     let rope_width = 1.;
-    let rope_length = (ball_y - floor_y).abs();
+    let rope_length = distance(&Point2::new(floor_x, floor_y), &Point2::new(ball_x, ball_y));
     let rope_body = RigidBodyBuilder::new_dynamic();
     let rope_collider = ColliderBuilder::cuboid(rope_width / 2., rope_length / 2.);
     let rope_size = Vec2::new(rope_width, rope_length);
