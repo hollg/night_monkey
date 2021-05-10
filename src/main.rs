@@ -1,11 +1,12 @@
 use bevy::prelude::*;
-use bevy_rapier2d::physics::{RapierConfiguration, RapierPhysicsPlugin};
-
-use bevy_rapier2d::rapier::dynamics::RigidBodyBuilder;
+use bevy_rapier2d::na::Point2;
+use bevy_rapier2d::physics::{JointBuilderComponent, RapierPhysicsPlugin};
+use bevy_rapier2d::rapier::dynamics::{BallJoint, RigidBodyBuilder};
 use bevy_rapier2d::rapier::geometry::ColliderBuilder;
 fn main() {
     App::build()
         .insert_resource(WindowDescriptor {
+            title: "Night Monkey".to_string(),
             width: 700.,
             height: 700.,
             ..Default::default()
@@ -17,9 +18,7 @@ fn main() {
         .run();
 }
 
-fn setup_graphics(mut commands: Commands, mut configuration: ResMut<RapierConfiguration>) {
-    configuration.scale = 10.0;
-
+fn setup_graphics(mut commands: Commands) {
     let camera = OrthographicCameraBundle::new_2d();
     commands.spawn_bundle(LightBundle {
         transform: Transform::from_translation(Vec3::new(1000.0, 10.0, 2000.0)),
@@ -34,48 +33,76 @@ fn setup_graphics(mut commands: Commands, mut configuration: ResMut<RapierConfig
 }
 
 fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
-    let floor_width = 30.;
-    let floor_height = 10.;
+    let floor_width = 1.;
+    let floor_height = 1.;
     let floor_x = 0.;
     let floor_y = 0.;
 
     // Static rigid-body with a cuboid shape.
-    let static_body = RigidBodyBuilder::new_static().translation(floor_x, floor_y);
+    let floor_body = RigidBodyBuilder::new_static().translation(floor_x, floor_y);
+
     let floor_collider = ColliderBuilder::cuboid(floor_width / 2., floor_height / 2.);
 
     let floor_size = Vec2::new(floor_width, floor_height);
     let floor_material = materials.add(Color::rgb(0.5, 0.5, 1.0).into());
-    let floor_position = Vec3::new(floor_x, floor_y, 1.0);
 
-    commands
+    let floor = commands
         .spawn()
-        .insert_bundle((static_body, floor_collider))
+        .insert_bundle((floor_body, floor_collider))
         .insert_bundle(SpriteBundle {
             material: floor_material,
             sprite: Sprite::new(floor_size),
-            transform: Transform::from_translation(floor_position),
             ..Default::default()
-        });
+        })
+        .id();
 
-    let ball_diameter = 5.;
-    let ball_x = 0.;
-    let ball_y = 20.0;
+    let ball_diameter = 10.;
+    let ball_x = -50.;
+    let ball_y = 100.0;
 
     // Dynamic rigid-body with ball shape.
-    let dynamic_body = RigidBodyBuilder::new_dynamic().translation(ball_x, ball_y);
+    let ball_body = RigidBodyBuilder::new_dynamic().translation(ball_x, ball_y);
     let ball_colider = ColliderBuilder::ball(ball_diameter / 2.);
 
     let ball_size = Vec2::new(ball_diameter, ball_diameter);
-    let ball_material = materials.add(Color::rgb(0.7, 0.2, 1.0).into());
-    let ball_position = Vec3::new(ball_x, ball_y, 1.0);
+    let ball_material = materials.add(Color::rgb(0., 0., 0.).into());
 
-    commands
+    let ball = commands
         .spawn()
-        .insert_bundle((dynamic_body, ball_colider))
+        .insert_bundle((ball_body, ball_colider))
         .insert_bundle(SpriteBundle {
-            material: ball_material,
+            material: ball_material.clone(),
             sprite: Sprite::new(ball_size),
-            transform: Transform::from_translation(ball_position),
             ..Default::default()
-        });
+        })
+        .id();
+
+    let rope_width = 1.;
+    let rope_length = (ball_y - floor_y).abs();
+    let rope_body = RigidBodyBuilder::new_dynamic();
+    let rope_collider = ColliderBuilder::cuboid(rope_width / 2., rope_length / 2.);
+    let rope_size = Vec2::new(rope_width, rope_length);
+
+    let rope = commands
+        .spawn()
+        .insert_bundle((rope_body, rope_collider))
+        .insert_bundle(SpriteBundle {
+            material: ball_material.clone(),
+            sprite: Sprite::new(rope_size),
+            ..Default::default()
+        })
+        .id();
+
+    let ball_rope_joint_params =
+        BallJoint::new(Point2::new(0., rope_length / 2.), Point2::origin());
+    let ball_rope_joint_builder_component =
+        JointBuilderComponent::new(ball_rope_joint_params, rope, ball);
+    commands.spawn_bundle((ball_rope_joint_builder_component,));
+
+    let floor_rope_joint_params =
+        BallJoint::new(Point2::new(0., -(rope_length / 2.)), Point2::origin());
+    let ball_rope_joint_builder_component =
+        JointBuilderComponent::new(floor_rope_joint_params, rope, floor);
+
+    commands.spawn_bundle((ball_rope_joint_builder_component,));
 }
