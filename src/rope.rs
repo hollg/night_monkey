@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use bevy::prelude::*;
 use bevy_rapier2d::na::distance;
 use bevy_rapier2d::na::{center, Point2};
@@ -11,7 +13,7 @@ pub struct RopePlugin;
 
 impl Plugin for RopePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(toggle_rope.system());
+        app.add_system_to_stage(CoreStage::PreUpdate, toggle_rope.system());
     }
 }
 pub struct Rope;
@@ -77,8 +79,18 @@ pub fn toggle_rope(
     if rope_query.iter().is_empty() {
         // get ball
         if let Ok(ball) = ball_query.single() {
-            // get anchor
-            if let Ok(anchor) = anchor_query.single() {
+            // get closest anchor
+            let ball_point = Point2::new(ball.1.translation.x, ball.1.translation.y);
+
+            let closest_anchor = anchor_query.iter().min_by(|(_, x), (_, y)| {
+                distance(&ball_point, &Point2::new(x.translation.x, x.translation.y))
+                    .partial_cmp(&distance(
+                        &ball_point,
+                        &Point2::new(y.translation.x, y.translation.y),
+                    ))
+                    .unwrap_or(Ordering::Equal)
+            });
+            if let Some(anchor) = closest_anchor {
                 // spawn rope between ball and anchor
                 spawn_rope(
                     &mut commands,

@@ -60,13 +60,25 @@ impl FromWorld for Materials {
 }
 
 fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
-    let anchor_x = 0.;
-    let anchor_y = 0.;
     spawn_anchor_point(
         &mut commands,
         materials.anchor_point_material.clone(),
-        anchor_x,
-        anchor_y,
+        -200.,
+        0.,
+    );
+
+    spawn_anchor_point(
+        &mut commands,
+        materials.anchor_point_material.clone(),
+        0.,
+        0.,
+    );
+
+    spawn_anchor_point(
+        &mut commands,
+        materials.anchor_point_material.clone(),
+        200.,
+        0.,
     );
 
     let ball_x = -90.;
