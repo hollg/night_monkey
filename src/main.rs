@@ -1,3 +1,4 @@
+#![feature(exact_size_is_empty)]
 use bevy::prelude::*;
 use bevy_rapier2d::na::Point2;
 use bevy_rapier2d::physics::RapierPhysicsPlugin;
@@ -18,9 +19,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .init_resource::<Materials>()
         .add_plugin(RapierPhysicsPlugin)
+        .add_plugin(RopePlugin)
         .add_startup_system(setup_graphics.system())
         .add_startup_system(setup_physics.system())
-        .add_system(remove_rope.system())
         .run();
 }
 
@@ -38,7 +39,7 @@ fn setup_graphics(mut commands: Commands) {
     commands.spawn_bundle(camera);
 }
 
-struct Materials {
+pub struct Materials {
     ball_material: Handle<ColorMaterial>,
     anchor_point_material: Handle<ColorMaterial>,
     rope_material: Handle<ColorMaterial>,
@@ -56,13 +57,13 @@ impl FromWorld for Materials {
 }
 
 fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
-    let floor_x = 0.;
-    let floor_y = 0.;
-    let floor = spawn_anchor_point(
+    let anchor_x = 0.;
+    let anchor_y = 0.;
+    let anchor = spawn_anchor_point(
         &mut commands,
         materials.anchor_point_material.clone(),
-        floor_x,
-        floor_y,
+        anchor_x,
+        anchor_y,
     );
 
     let ball_x = -90.;
@@ -77,12 +78,14 @@ fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
     spawn_rope(
         &mut commands,
         materials.rope_material.clone(),
-        &Point2::new(floor_x, floor_y),
+        &Point2::new(anchor_x, anchor_y),
         &Point2::new(ball_x, ball_y),
-        floor,
+        anchor,
         ball,
     )
 }
+
+pub struct AnchorPoint;
 
 fn spawn_anchor_point(
     commands: &mut Commands,
@@ -106,9 +109,11 @@ fn spawn_anchor_point(
             sprite: Sprite::new(sprite_size),
             ..Default::default()
         })
+        .insert(AnchorPoint)
         .id()
 }
 
+pub struct Ball;
 fn spawn_ball(commands: &mut Commands, material: Handle<ColorMaterial>, x: f32, y: f32) -> Entity {
     let ball_diameter = 10.;
     // let ball_x = -90.;
@@ -129,5 +134,6 @@ fn spawn_ball(commands: &mut Commands, material: Handle<ColorMaterial>, x: f32, 
             sprite: Sprite::new(ball_size),
             ..Default::default()
         })
+        .insert(Ball)
         .id()
 }

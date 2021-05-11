@@ -1,10 +1,20 @@
 use bevy::prelude::*;
 use bevy_rapier2d::na::distance;
-use bevy_rapier2d::na::Point2;
+use bevy_rapier2d::na::Matrix::angle;
+use bevy_rapier2d::na::{center, Point2};
 use bevy_rapier2d::physics::JointBuilderComponent;
 use bevy_rapier2d::rapier::dynamics::{BallJoint, RigidBodyBuilder};
 use bevy_rapier2d::rapier::geometry::ColliderBuilder;
 
+use crate::{AnchorPoint, Ball, Materials};
+
+pub struct RopePlugin;
+
+impl Plugin for RopePlugin {
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_system(toggle_rope.system());
+    }
+}
 pub struct Rope;
 
 pub fn spawn_rope(
@@ -17,7 +27,10 @@ pub fn spawn_rope(
 ) {
     let rope_width = 1.;
     let rope_length = distance(point_a, point_b);
-    let rope_body = RigidBodyBuilder::new_dynamic();
+    let middle_point = center(point_a, point_b);
+    let rope_body = RigidBodyBuilder::new_dynamic()
+        .translation(middle_point.x, middle_point.y)
+        .rotation(angle(point_a, point_b));
     let rope_collider = ColliderBuilder::cuboid(rope_width / 2., rope_length / 2.);
     let rope_size = Vec2::new(rope_width, rope_length);
 
@@ -43,16 +56,37 @@ pub fn spawn_rope(
     commands.spawn_bundle((entity_b_joint_builder,));
 }
 
-pub fn remove_rope(
+pub fn toggle_rope(
     mut commands: Commands,
     mouse_button: Res<Input<MouseButton>>,
+    materials: Res<Materials>,
     rope_query: Query<(Entity, &Rope)>,
+    anchor_query: Query<(Entity, &Transform), With<AnchorPoint>>,
+    ball_query: Query<(Entity, &Transform), With<Ball>>,
 ) {
     if !mouse_button.just_pressed(MouseButton::Left) {
         return;
     }
 
-    for (entity, _) in rope_query.iter() {
-        commands.entity(entity).despawn();
+    if rope_query.iter().is_empty() {
+        // get ball
+        if let Ok(ball) = ball_query.single() {
+            // get anchor
+            if let Ok(anchor) = anchor_query.single() {
+                // spawn rope between ball and anchor
+                spawn_rope(
+                    &mut commands,
+                    materials.rope_material.clone(),
+                    &Point2::new(ball.1.translation.x, ball.1.translation.y),
+                    &Point2::new(anchor.1.translation.x, anchor.1.translation.y),
+                    ball.0,
+                    anchor.0,
+                )
+            }
+        }
+    } else {
+        for (entity, _) in rope_query.iter() {
+            commands.entity(entity).despawn();
+        }
     }
 }
