@@ -29,7 +29,7 @@ fn setup_graphics(mut commands: Commands) {
     commands.spawn_bundle(LightBundle {
         transform: Transform::from_translation(Vec3::new(1000.0, 10.0, 2000.0)),
         light: Light {
-            intensity: 100_000_000_.0,
+            intensity: 100_000_000.0,
             range: 6000.0,
             ..Default::default()
         },
@@ -65,26 +65,14 @@ fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
         floor_y,
     );
 
-    let ball_diameter = 10.;
     let ball_x = -90.;
-    let ball_y = 20.0;
-
-    // Dynamic rigid-body with ball shape.
-    let ball_body = RigidBodyBuilder::new_dynamic().translation(ball_x, ball_y);
-    let ball_colider = ColliderBuilder::ball(ball_diameter / 2.);
-
-    let ball_size = Vec2::new(ball_diameter, ball_diameter);
-    let ball_material = materials.ball_material.clone();
-
-    let ball = commands
-        .spawn()
-        .insert_bundle((ball_body, ball_colider))
-        .insert_bundle(SpriteBundle {
-            material: ball_material.clone(),
-            sprite: Sprite::new(ball_size),
-            ..Default::default()
-        })
-        .id();
+    let ball_y = 20.;
+    let ball = spawn_ball(
+        &mut commands,
+        materials.ball_material.clone(),
+        ball_x,
+        ball_y,
+    );
 
     spawn_rope(
         &mut commands,
@@ -116,6 +104,29 @@ fn spawn_anchor_point(
         .insert_bundle(SpriteBundle {
             material,
             sprite: Sprite::new(sprite_size),
+            ..Default::default()
+        })
+        .id()
+}
+
+fn spawn_ball(commands: &mut Commands, material: Handle<ColorMaterial>, x: f32, y: f32) -> Entity {
+    let ball_diameter = 10.;
+    // let ball_x = -90.;
+    // let ball_y = 20.0;
+
+    // Dynamic rigid-body with ball shape.
+    let ball_body = RigidBodyBuilder::new_dynamic().translation(x, y);
+    let ball_colider = ColliderBuilder::ball(ball_diameter / 2.);
+
+    let ball_size = Vec2::new(ball_diameter, ball_diameter);
+    let ball_material = material;
+
+    commands
+        .spawn()
+        .insert_bundle((ball_body, ball_colider))
+        .insert_bundle(SpriteBundle {
+            material: ball_material,
+            sprite: Sprite::new(ball_size),
             ..Default::default()
         })
         .id()

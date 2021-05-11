@@ -26,7 +26,7 @@ pub fn spawn_rope(
         .insert(Rope)
         .insert_bundle((rope_body, rope_collider))
         .insert_bundle(SpriteBundle {
-            material: material,
+            material,
             sprite: Sprite::new(rope_size),
             ..Default::default()
         })
