@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy_rapier2d::na::distance;
-use bevy_rapier2d::na::Matrix::angle;
+use bevy_rapier2d::na::{distance, ComplexField};
+// use bevy_rapier2d::na::Matrix::angle;
 use bevy_rapier2d::na::{center, Point2};
 use bevy_rapier2d::physics::JointBuilderComponent;
 use bevy_rapier2d::rapier::dynamics::{BallJoint, RigidBodyBuilder};
@@ -20,17 +20,21 @@ pub struct Rope;
 pub fn spawn_rope(
     commands: &mut Commands,
     material: Handle<ColorMaterial>,
-    point_a: &Point2<f32>,
-    point_b: &Point2<f32>,
-    entity_a: Entity,
-    entity_b: Entity,
+    ball_point: &Point2<f32>,
+    anchor_point: &Point2<f32>,
+    ball_entity: Entity,
+    anchor_entity: Entity,
 ) {
     let rope_width = 1.;
-    let rope_length = distance(point_a, point_b);
-    let middle_point = center(point_a, point_b);
+    let rope_length = distance(ball_point, anchor_point);
+    let middle_point = center(ball_point, anchor_point);
+    let angle =
+        ((anchor_point.y - ball_point.y).abs() / (anchor_point.x - ball_point.x).abs()).atan();
+
     let rope_body = RigidBodyBuilder::new_dynamic()
-        .translation(middle_point.x, middle_point.y)
-        .rotation(angle(point_a, point_b));
+        .rotation(angle)
+        .translation(middle_point.x, middle_point.y);
+
     let rope_collider = ColliderBuilder::cuboid(rope_width / 2., rope_length / 2.);
     let rope_size = Vec2::new(rope_width, rope_length);
 
@@ -45,15 +49,18 @@ pub fn spawn_rope(
         })
         .id();
 
-    let entity_a_joint_params = BallJoint::new(Point2::new(0., rope_length / 2.), Point2::origin());
-    let entity_a_joint_builder = JointBuilderComponent::new(entity_a_joint_params, rope, entity_a);
-    commands.spawn_bundle((entity_a_joint_builder,));
+    let ball_rope_joint_params =
+        BallJoint::new(Point2::new(0., rope_length / 2.), Point2::origin());
+    let ball_rope_joint_builder =
+        JointBuilderComponent::new(ball_rope_joint_params, rope, ball_entity);
+    commands.spawn_bundle((ball_rope_joint_builder,));
 
-    let entity_b_joint_params =
+    let anchor_rope_joint_params =
         BallJoint::new(Point2::new(0., -(rope_length / 2.)), Point2::origin());
-    let entity_b_joint_builder = JointBuilderComponent::new(entity_b_joint_params, rope, entity_b);
+    let anchor_rope_joint_builder =
+        JointBuilderComponent::new(anchor_rope_joint_params, rope, anchor_entity);
 
-    commands.spawn_bundle((entity_b_joint_builder,));
+    commands.spawn_bundle((anchor_rope_joint_builder,));
 }
 
 pub fn toggle_rope(

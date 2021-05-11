@@ -1,6 +1,6 @@
 #![feature(exact_size_is_empty)]
 use bevy::prelude::*;
-use bevy_rapier2d::na::Point2;
+// use bevy_rapier2d::na::Point2;
 use bevy_rapier2d::physics::RapierPhysicsPlugin;
 use bevy_rapier2d::rapier::dynamics::RigidBodyBuilder;
 use bevy_rapier2d::rapier::geometry::ColliderBuilder;
@@ -59,7 +59,7 @@ impl FromWorld for Materials {
 fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
     let anchor_x = 0.;
     let anchor_y = 0.;
-    let anchor = spawn_anchor_point(
+    spawn_anchor_point(
         &mut commands,
         materials.anchor_point_material.clone(),
         anchor_x,
@@ -68,21 +68,21 @@ fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
 
     let ball_x = -90.;
     let ball_y = 20.;
-    let ball = spawn_ball(
+    spawn_ball(
         &mut commands,
         materials.ball_material.clone(),
         ball_x,
         ball_y,
     );
 
-    spawn_rope(
-        &mut commands,
-        materials.rope_material.clone(),
-        &Point2::new(anchor_x, anchor_y),
-        &Point2::new(ball_x, ball_y),
-        anchor,
-        ball,
-    )
+    // spawn_rope(
+    //     &mut commands,
+    //     materials.rope_material.clone(),
+    //     &Point2::new(anchor_x, anchor_y),
+    //     &Point2::new(ball_x, ball_y),
+    //     anchor,
+    //     ball,
+    // )
 }
 
 pub struct AnchorPoint;
