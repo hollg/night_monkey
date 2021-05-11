@@ -17,6 +17,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin)
         .add_startup_system(setup_graphics.system())
         .add_startup_system(setup_physics.system())
+        .add_system(remove_rope.system())
         .run();
 }
 
@@ -34,9 +35,11 @@ fn setup_graphics(mut commands: Commands) {
     commands.spawn_bundle(camera);
 }
 
+struct Rope;
+
 fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
-    let floor_width = 1.;
-    let floor_height = 1.;
+    let floor_width = 3.;
+    let floor_height = 3.;
     let floor_x = 0.;
     let floor_y = 0.;
 
@@ -50,7 +53,7 @@ fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMater
 
     let floor = commands
         .spawn()
-        .insert_bundle((floor_body, ))
+        .insert_bundle((floor_body,))
         .insert_bundle(SpriteBundle {
             material: floor_material,
             sprite: Sprite::new(floor_size),
@@ -87,6 +90,7 @@ fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMater
 
     let rope = commands
         .spawn()
+        .insert(Rope)
         .insert_bundle((rope_body, rope_collider))
         .insert_bundle(SpriteBundle {
             material: ball_material.clone(),
@@ -107,4 +111,18 @@ fn setup_physics(mut commands: Commands, mut materials: ResMut<Assets<ColorMater
         JointBuilderComponent::new(floor_rope_joint_params, rope, floor);
 
     commands.spawn_bundle((ball_rope_joint_builder_component,));
+}
+
+fn remove_rope(
+    mut commands: Commands,
+    mouse_button: Res<Input<MouseButton>>,
+    rope_query: Query<(Entity, &Rope)>,
+) {
+    if !mouse_button.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    for (entity, _) in rope_query.iter() {
+        commands.entity(entity).despawn();
+    }
 }
