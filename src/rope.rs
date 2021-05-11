@@ -1,12 +1,11 @@
 use bevy::prelude::*;
-use bevy_rapier2d::na::{distance, ComplexField};
-// use bevy_rapier2d::na::Matrix::angle;
+use bevy_rapier2d::na::distance;
 use bevy_rapier2d::na::{center, Point2};
 use bevy_rapier2d::physics::JointBuilderComponent;
 use bevy_rapier2d::rapier::dynamics::{BallJoint, RigidBodyBuilder};
 use bevy_rapier2d::rapier::geometry::ColliderBuilder;
 
-use crate::{AnchorPoint, Ball, Materials};
+use crate::{anchor_point::AnchorPoint, ball::Ball, Materials};
 
 pub struct RopePlugin;
 
