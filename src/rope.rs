@@ -41,7 +41,7 @@ pub fn spawn_rope(
 
     let mut rope_transformation =
         Transform::from_translation(Vec3::new(middle_point.x, middle_point.y, 0.));
-    rope_transformation.rotate(Quat::from_rotation_y(angle));
+    rope_transformation.rotate(Quat::from_rotation_z(angle));
 
     let rope = commands
         .spawn()
@@ -77,41 +77,78 @@ pub fn toggle_rope(
     anchor_query: Query<(Entity, &Transform), With<AnchorPoint>>,
     ball_query: Query<(Entity, &Transform), With<Ball>>,
 ) {
-    if !mouse_button.just_pressed(MouseButton::Left) {
+    if !mouse_button.is_changed() {
         return;
     }
 
-    if rope_query.iter().is_empty() {
-        // get ball
-        if let Ok(ball) = ball_query.single() {
-            // get closest anchor
-            let ball_point = Point2::new(ball.1.translation.x, ball.1.translation.y);
-            let closest_anchor = anchor_query.iter().min_by(|(_, x), (_, y)| {
-                distance(&ball_point, &Point2::new(x.translation.x, x.translation.y))
-                    .partial_cmp(&distance(
-                        &ball_point,
-                        &Point2::new(y.translation.x, y.translation.y),
-                    ))
-                    .unwrap_or(Ordering::Equal)
-            });
-
-            if let Some(anchor) = closest_anchor {
-                // spawn rope between ball and anchor
-                spawn_rope(
-                    &mut commands,
-                    materials.rope_material.clone(),
-                    &Point2::new(ball.1.translation.x, ball.1.translation.y),
-                    &Point2::new(anchor.1.translation.x, anchor.1.translation.y),
-                    ball.0,
-                    anchor.0,
-                )
-            }
-        }
-    } else {
-        for (entity, _) in rope_query.iter() {
-            commands.entity(entity).despawn();
+    if mouse_button.just_released(MouseButton::Left) {
+        if let Ok(rope) = rope_query.single() {
+            commands.entity(rope.0).despawn();
         }
     }
+
+    if mouse_button.just_pressed(MouseButton::Left) {
+        if rope_query.iter().is_empty() {
+            if let Ok(ball) = ball_query.single() {
+                // get closest anchor
+                let ball_point = Point2::new(ball.1.translation.x, ball.1.translation.y);
+                let closest_anchor = anchor_query.iter().min_by(|(_, x), (_, y)| {
+                    distance(&ball_point, &Point2::new(x.translation.x, x.translation.y))
+                        .partial_cmp(&distance(
+                            &ball_point,
+                            &Point2::new(y.translation.x, y.translation.y),
+                        ))
+                        .unwrap_or(Ordering::Equal)
+                });
+
+                if let Some(anchor) = closest_anchor {
+                    // spawn rope between ball and anchor
+                    spawn_rope(
+                        &mut commands,
+                        materials.rope_material.clone(),
+                        &Point2::new(ball.1.translation.x, ball.1.translation.y),
+                        &Point2::new(anchor.1.translation.x, anchor.1.translation.y),
+                        ball.0,
+                        anchor.0,
+                    )
+                }
+            }
+        }
+    }
+
+    // if mouse_button.pressed(MouseButton::Left) &&
+
+    // if rope_query.iter().is_empty() {
+    //     // get ball
+    //     if let Ok(ball) = ball_query.single() {
+    //         // get closest anchor
+    //         let ball_point = Point2::new(ball.1.translation.x, ball.1.translation.y);
+    //         let closest_anchor = anchor_query.iter().min_by(|(_, x), (_, y)| {
+    //             distance(&ball_point, &Point2::new(x.translation.x, x.translation.y))
+    //                 .partial_cmp(&distance(
+    //                     &ball_point,
+    //                     &Point2::new(y.translation.x, y.translation.y),
+    //                 ))
+    //                 .unwrap_or(Ordering::Equal)
+    //         });
+
+    //         if let Some(anchor) = closest_anchor {
+    //             // spawn rope between ball and anchor
+    //             spawn_rope(
+    //                 &mut commands,
+    //                 materials.rope_material.clone(),
+    //                 &Point2::new(ball.1.translation.x, ball.1.translation.y),
+    //                 &Point2::new(anchor.1.translation.x, anchor.1.translation.y),
+    //                 ball.0,
+    //                 anchor.0,
+    //             )
+    //         }
+    //     }
+    // } else {
+    //     for (entity, _) in rope_query.iter() {
+    //         commands.entity(entity).despawn();
+    //     }
+    // }
 }
 
 fn zip_to_point(
