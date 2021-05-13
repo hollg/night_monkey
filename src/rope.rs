@@ -29,15 +29,14 @@ pub fn spawn_rope(
     let rope_width = 1.;
     let rope_length = distance(ball_point, anchor_point);
     let middle_point = center(ball_point, anchor_point);
-    let angle =
-        ((anchor_point.y - ball_point.y).abs() / (anchor_point.x - ball_point.x).abs()).atan();
+    let angle = ((anchor_point.y - ball_point.y) / (anchor_point.x - ball_point.x)).atan();
 
     let rope_body = RigidBodyBuilder::new_dynamic()
         .rotation(angle)
         .translation(middle_point.x, middle_point.y);
 
-    let rope_collider = ColliderBuilder::cuboid(rope_width / 2., rope_length / 2.);
-    let rope_size = Vec2::new(rope_width, rope_length);
+    let rope_collider = ColliderBuilder::cuboid(rope_length / 2., rope_width / 2.);
+    let rope_size = Vec2::new(rope_length, rope_width);
 
     let mut rope_transformation =
         Transform::from_translation(Vec3::new(middle_point.x, middle_point.y, 0.));
@@ -56,13 +55,13 @@ pub fn spawn_rope(
         .id();
 
     let ball_rope_joint_params =
-        BallJoint::new(Point2::new(0., rope_length / 2.), Point2::origin());
+        BallJoint::new(Point2::origin(), Point2::new(-(rope_length / 2.), 0.5));
     let ball_rope_joint_builder =
-        JointBuilderComponent::new(ball_rope_joint_params, rope, ball_entity);
+        JointBuilderComponent::new(ball_rope_joint_params, ball_entity, rope);
     commands.spawn_bundle((ball_rope_joint_builder,));
 
     let anchor_rope_joint_params =
-        BallJoint::new(Point2::new(0., -(rope_length / 2.)), Point2::origin());
+        BallJoint::new(Point2::new(rope_length / 2., 0.5), Point2::origin());
     let anchor_rope_joint_builder =
         JointBuilderComponent::new(anchor_rope_joint_params, rope, anchor_entity);
 
