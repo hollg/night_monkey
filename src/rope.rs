@@ -31,6 +31,9 @@ pub fn spawn_rope(
     let middle_point = center(ball_point, anchor_point);
     let angle = ((anchor_point.y - ball_point.y) / (anchor_point.x - ball_point.x)).atan();
 
+    let degs = angle.to_degrees();
+    println!("degs: {}", degs);
+
     let rope_body = RigidBodyBuilder::new_dynamic()
         .rotation(angle)
         .translation(middle_point.x, middle_point.y);
@@ -56,14 +59,28 @@ pub fn spawn_rope(
 
     let ball_rope_joint_params =
         BallJoint::new(Point2::origin(), Point2::new(-(rope_length / 2.), 0.5));
-    let ball_rope_joint_builder =
-        JointBuilderComponent::new(ball_rope_joint_params, ball_entity, rope);
+    let ball_rope_joint_builder = JointBuilderComponent::new(
+        ball_rope_joint_params,
+        if ball_point.x <= anchor_point.x {
+            ball_entity
+        } else {
+            anchor_entity
+        },
+        rope,
+    );
     commands.spawn_bundle((ball_rope_joint_builder,));
 
     let anchor_rope_joint_params =
         BallJoint::new(Point2::new(rope_length / 2., 0.5), Point2::origin());
-    let anchor_rope_joint_builder =
-        JointBuilderComponent::new(anchor_rope_joint_params, rope, anchor_entity);
+    let anchor_rope_joint_builder = JointBuilderComponent::new(
+        anchor_rope_joint_params,
+        rope,
+        if ball_point.x <= anchor_point.x {
+            anchor_entity
+        } else {
+            ball_entity
+        },
+    );
 
     commands.spawn_bundle((anchor_rope_joint_builder,));
 }

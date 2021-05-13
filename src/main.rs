@@ -81,7 +81,7 @@ fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
         0.,
     );
 
-    let ball_x = -90.;
+    let ball_x = 30.;
     let ball_y = 20.;
     spawn_ball(
         &mut commands,
