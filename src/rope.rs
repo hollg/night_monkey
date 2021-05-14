@@ -34,9 +34,9 @@ pub fn spawn_chain(
     let rope_length = distance(origin_point, target_point) / 2.;
     let rope_angle = ((target_point.y - origin_point.y) / (target_point.x - origin_point.x)).atan();
 
-    // spawn rope between origin and center (with joint to origin)
+    // spawn rope between origin and center (with joint to origin entity)
 
-    // spawn rope between center and target (with joint to target)
+    // spawn rope between center and target (with joint to target entity)
 
     // add joint between ropes
 }
@@ -47,7 +47,7 @@ pub fn spawn_rope(
     origin_point: &Point2<f32>,
     target_point: &Point2<f32>,
     origin_entity: Entity,
-    target_entity: Entity,
+    // target_entity: Entity,
     rope_length: f32,
     rope_angle: f32,
     middle_point: &Point2<f32>,
@@ -78,33 +78,6 @@ pub fn spawn_rope(
             ..Default::default()
         })
         .id();
-
-    let ball_rope_joint_params =
-        BallJoint::new(Point2::origin(), Point2::new(-(rope_length / 2.), 0.5));
-    let ball_rope_joint_builder = JointBuilderComponent::new(
-        ball_rope_joint_params,
-        if origin_point.x <= target_point.x {
-            origin_entity
-        } else {
-            target_entity
-        },
-        rope,
-    );
-    commands.spawn_bundle((ball_rope_joint_builder,));
-
-    let anchor_rope_joint_params =
-        BallJoint::new(Point2::new(rope_length / 2., 0.5), Point2::origin());
-    let anchor_rope_joint_builder = JointBuilderComponent::new(
-        anchor_rope_joint_params,
-        rope,
-        if origin_point.x <= target_point.x {
-            target_entity
-        } else {
-            origin_entity
-        },
-    );
-
-    commands.spawn_bundle((anchor_rope_joint_builder,));
 
     return rope;
 }
@@ -145,21 +118,49 @@ pub fn toggle_rope(
                     // spawn rope between ball and anchor
                     let origin_point = Point2::new(ball.1.translation.x, ball.1.translation.y);
                     let anchor_point = Point2::new(anchor.1.translation.x, anchor.1.translation.y);
+                    let rope_length = distance(&origin_point, &anchor_point);
                     let rope_angle = ((anchor_point.y - origin_point.y)
                         / (anchor_point.x - origin_point.x))
                         .atan();
 
-                    spawn_rope(
+                    let rope = spawn_rope(
                         &mut commands,
                         materials.rope_material.clone(),
                         &origin_point,
                         &anchor_point,
                         ball.0,
-                        anchor.0,
-                        distance(&origin_point, &anchor_point),
+                        // anchor.0,
+                        rope_length,
                         rope_angle,
                         &center(&origin_point, &anchor_point),
                     );
+
+                    let ball_rope_joint_params =
+                        BallJoint::new(Point2::origin(), Point2::new(-(rope_length / 2.), 0.5));
+                    let ball_rope_joint_builder = JointBuilderComponent::new(
+                        ball_rope_joint_params,
+                        if origin_point.x <= anchor_point.x {
+                            ball.0
+                        } else {
+                            anchor.0
+                        },
+                        rope,
+                    );
+                    commands.spawn_bundle((ball_rope_joint_builder,));
+
+                    let anchor_rope_joint_params =
+                        BallJoint::new(Point2::new(rope_length / 2., 0.5), Point2::origin());
+                    let anchor_rope_joint_builder = JointBuilderComponent::new(
+                        anchor_rope_joint_params,
+                        rope,
+                        if origin_point.x <= anchor_point.x {
+                            anchor.0
+                        } else {
+                            ball.0
+                        },
+                    );
+
+                    commands.spawn_bundle((anchor_rope_joint_builder,));
                 }
             }
         }
