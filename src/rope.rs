@@ -17,33 +17,55 @@ impl Plugin for RopePlugin {
     }
 }
 pub struct Rope;
+const ROPE_WIDTH: f32 = 1.;
+
+pub fn spawn_chain(
+    commands: &mut Commands,
+    material: Handle<ColorMaterial>,
+    origin_point: &Point2<f32>,
+    target_point: &Point2<f32>,
+    origin_entity: Entity,
+    target_entity: Entity,
+) {
+    // find center point between origin and target
+    let center_point = center(origin_point, target_point);
+
+    // find length and angle of ropes
+    let rope_length = distance(origin_point, target_point) / 2.;
+    let rope_angle = ((target_point.y - origin_point.y) / (target_point.x - origin_point.x)).atan();
+
+    // spawn rope between origin and center (with joint to origin)
+
+    // spawn rope between center and target (with joint to target)
+
+    // add joint between ropes
+}
 
 pub fn spawn_rope(
     commands: &mut Commands,
     material: Handle<ColorMaterial>,
-    ball_point: &Point2<f32>,
-    anchor_point: &Point2<f32>,
-    ball_entity: Entity,
-    anchor_entity: Entity,
-) {
-    let rope_width = 1.;
-    let rope_length = distance(ball_point, anchor_point);
-    let middle_point = center(ball_point, anchor_point);
-    let angle = ((anchor_point.y - ball_point.y) / (anchor_point.x - ball_point.x)).atan();
-
-    let degs = angle.to_degrees();
-    println!("degs: {}", degs);
+    origin_point: &Point2<f32>,
+    target_point: &Point2<f32>,
+    origin_entity: Entity,
+    target_entity: Entity,
+    rope_length: f32,
+    rope_angle: f32,
+    middle_point: &Point2<f32>,
+) -> Entity {
+    // let rope_length = distance(origin_point, target_point);
+    // let middle_point = center(origin_point, target_point);
+    // let angle = ((target_point.y - origin_point.y) / (target_point.x - origin_point.x)).atan();
 
     let rope_body = RigidBodyBuilder::new_dynamic()
-        .rotation(angle)
+        .rotation(rope_angle)
         .translation(middle_point.x, middle_point.y);
 
-    let rope_collider = ColliderBuilder::cuboid(rope_length / 2., rope_width / 2.);
-    let rope_size = Vec2::new(rope_length, rope_width);
+    let rope_collider = ColliderBuilder::cuboid(rope_length / 2., ROPE_WIDTH / 2.);
+    let rope_size = Vec2::new(rope_length, ROPE_WIDTH);
 
     let mut rope_transformation =
         Transform::from_translation(Vec3::new(middle_point.x, middle_point.y, 0.));
-    rope_transformation.rotate(Quat::from_rotation_z(angle));
+    rope_transformation.rotate(Quat::from_rotation_z(rope_angle));
 
     let rope = commands
         .spawn()
@@ -61,10 +83,10 @@ pub fn spawn_rope(
         BallJoint::new(Point2::origin(), Point2::new(-(rope_length / 2.), 0.5));
     let ball_rope_joint_builder = JointBuilderComponent::new(
         ball_rope_joint_params,
-        if ball_point.x <= anchor_point.x {
-            ball_entity
+        if origin_point.x <= target_point.x {
+            origin_entity
         } else {
-            anchor_entity
+            target_entity
         },
         rope,
     );
@@ -75,14 +97,16 @@ pub fn spawn_rope(
     let anchor_rope_joint_builder = JointBuilderComponent::new(
         anchor_rope_joint_params,
         rope,
-        if ball_point.x <= anchor_point.x {
-            anchor_entity
+        if origin_point.x <= target_point.x {
+            target_entity
         } else {
-            ball_entity
+            origin_entity
         },
     );
 
     commands.spawn_bundle((anchor_rope_joint_builder,));
+
+    return rope;
 }
 
 pub fn toggle_rope(
@@ -119,14 +143,23 @@ pub fn toggle_rope(
 
                 if let Some(anchor) = closest_anchor {
                     // spawn rope between ball and anchor
+                    let origin_point = Point2::new(ball.1.translation.x, ball.1.translation.y);
+                    let anchor_point = Point2::new(anchor.1.translation.x, anchor.1.translation.y);
+                    let rope_angle = ((anchor_point.y - origin_point.y)
+                        / (anchor_point.x - origin_point.x))
+                        .atan();
+
                     spawn_rope(
                         &mut commands,
                         materials.rope_material.clone(),
-                        &Point2::new(ball.1.translation.x, ball.1.translation.y),
-                        &Point2::new(anchor.1.translation.x, anchor.1.translation.y),
+                        &origin_point,
+                        &anchor_point,
                         ball.0,
                         anchor.0,
-                    )
+                        distance(&origin_point, &anchor_point),
+                        rope_angle,
+                        &center(&origin_point, &anchor_point),
+                    );
                 }
             }
         }
