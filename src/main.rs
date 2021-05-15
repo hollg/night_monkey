@@ -24,7 +24,7 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin)
         .add_plugin(RopePlugin)
         .add_startup_system(setup_graphics.system())
-        .add_startup_system(setup_physics.system())
+        .add_startup_system(setup_objects.system())
         .run();
 }
 
@@ -59,7 +59,7 @@ impl FromWorld for Materials {
     }
 }
 
-fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
+fn setup_objects(mut commands: Commands, materials: Res<Materials>) {
     let anchors: Vec<(f32, f32)> = vec![(-200., 0.), (0., 0.), (200.0, 0.)];
 
     for (x, y) in anchors.iter() {
@@ -71,8 +71,8 @@ fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
         );
     }
 
-    let ball_x = 30.;
-    let ball_y = 20.;
+    let ball_x = -250.;
+    let ball_y = 50.;
     spawn_ball(
         &mut commands,
         materials.ball_material.clone(),

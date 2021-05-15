@@ -52,13 +52,16 @@ pub fn spawn_chain(
         &center(&middle_point, target_point),
     );
 
+    let rope_start_point = Point2::new(-(rope_length / 2.), 0.5);
+    let rope_end_point = Point2::new(rope_length / 2., 0.5);
+
     // add joint from origin to node_a
     let ball_node_a_joint_params = BallJoint::new(
         Point2::origin(),
         if origin_point.x <= target_point.x {
-            Point2::new(-(rope_length / 2.), 0.5)
+            rope_start_point.clone()
         } else {
-            Point2::new(rope_length / 2., 0.5)
+            rope_end_point.clone()
         },
     );
     let ball_node_a_joint_builder =
@@ -68,14 +71,14 @@ pub fn spawn_chain(
     // add joint between ropes
     let node_a_node_b_joint_params = BallJoint::new(
         if origin_point.x <= target_point.x {
-            Point2::new(rope_length / 2., 0.5)
+            rope_end_point.clone()
         } else {
-            Point2::new(-(rope_length / 2.), 0.5)
+            rope_start_point.clone()
         },
         if origin_point.x <= target_point.x {
-            Point2::new(-(rope_length / 2.), 0.5)
+            rope_start_point.clone()
         } else {
-            Point2::new(rope_length / 2., 0.5)
+            rope_end_point.clone()
         },
     );
     let node_a_node_b_joint_builder =
@@ -85,9 +88,9 @@ pub fn spawn_chain(
     // add joint from node_b to target
     let node_b_target_joint_parms = BallJoint::new(
         if origin_point.x <= target_point.x {
-            Point2::new(rope_length / 2., 0.5)
+            rope_end_point.clone()
         } else {
-            Point2::new(-(rope_length / 2.), 0.5)
+            rope_start_point.clone()
         },
         Point2::origin(),
     );
