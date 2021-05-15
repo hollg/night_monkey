@@ -27,76 +27,103 @@ pub fn spawn_chain(
     origin_entity: Entity,
     target_entity: Entity,
 ) {
-    // find center point between origin and target
-    let middle_point = center(origin_point, target_point);
-
-    // find length and angle of ropes
-    let rope_length = distance(origin_point, target_point) / 2.;
+    // length and angle of ropes
+    // TODO: make one rope longer/shorter if distance isn't divisible by rope_length
+    let rope_length = 10.;
+    let num_ropes = (distance(origin_point, target_point) / rope_length).floor();
     let rope_angle = ((target_point.y - origin_point.y) / (target_point.x - origin_point.x)).atan();
 
-    // spawn rope between origin and center
-    let node_a = spawn_rope(
-        commands,
-        material.clone(),
-        rope_length,
-        rope_angle,
-        &center(&origin_point, &middle_point),
-    );
+    let mut nodes: Vec<Entity> = vec![];
+    let mut current_node_start_point = *origin_point;
 
-    // spawn rope between center and target
-    let node_b = spawn_rope(
-        commands,
-        material,
-        rope_length,
-        rope_angle,
-        &center(&middle_point, target_point),
-    );
+    // create all equal-length nodes
+    for _ in 0..num_ropes as u8 {
+        let current_node_end_point = Point2::new(
+            current_node_start_point.x + (rope_length * rope_angle.cos()),
+            current_node_start_point.y + (rope_length * rope_angle.cos()),
+        );
 
-    let rope_start_point = Point2::new(-(rope_length / 2.), 0.5);
-    let rope_end_point = Point2::new(rope_length / 2., 0.5);
+        nodes.push(spawn_rope(
+            commands,
+            material.clone(),
+            rope_length,
+            rope_angle,
+            &center(&current_node_start_point, &current_node_end_point),
+        ));
+
+        current_node_start_point = current_node_end_point;
+    }
+
+    let rope_local_start_point = Point2::new(-(rope_length / 2.), 0.5);
+    let rope_local_end_point = Point2::new(rope_length / 2., 0.5);
 
     // add joint from origin to node_a
-    let ball_node_a_joint_params = BallJoint::new(
+    let origin_chain_joint_params = BallJoint::new(
         Point2::origin(),
         if origin_point.x <= target_point.x {
-            rope_start_point.clone()
+            rope_local_start_point
         } else {
-            rope_end_point.clone()
+            rope_local_end_point
         },
     );
-    let ball_node_a_joint_builder =
-        JointBuilderComponent::new(ball_node_a_joint_params, origin_entity, node_a);
-    commands.spawn_bundle((ball_node_a_joint_builder,));
+    let origin_chain_joint_builder =
+        JointBuilderComponent::new(origin_chain_joint_params, origin_entity, nodes[0]);
+    commands.spawn_bundle((origin_chain_joint_builder,));
 
-    // add joint between ropes
-    let node_a_node_b_joint_params = BallJoint::new(
+    join_nodes(
+        commands,
+        &nodes,
+        rope_local_start_point,
+        rope_local_end_point,
         if origin_point.x <= target_point.x {
-            rope_end_point.clone()
+            DifferenceType::Positive
         } else {
-            rope_start_point.clone()
-        },
-        if origin_point.x <= target_point.x {
-            rope_start_point.clone()
-        } else {
-            rope_end_point.clone()
+            DifferenceType::Negative
         },
     );
-    let node_a_node_b_joint_builder =
-        JointBuilderComponent::new(node_a_node_b_joint_params, node_a, node_b);
-    commands.spawn_bundle((node_a_node_b_joint_builder,));
 
-    // add joint from node_b to target
-    let node_b_target_joint_parms = BallJoint::new(
+    // add joint from final node to target
+    let chain_target_joint_params = BallJoint::new(
         if origin_point.x <= target_point.x {
-            rope_end_point.clone()
+            rope_local_end_point
         } else {
-            rope_start_point.clone()
+            rope_local_start_point
         },
         Point2::origin(),
     );
-    let node_b_target_joint_builder =
-        JointBuilderComponent::new(node_b_target_joint_parms, node_b, target_entity);
-    commands.spawn_bundle((node_b_target_joint_builder,));
+    let chain_target_joint_builder = JointBuilderComponent::new(
+        chain_target_joint_params,
+        nodes[nodes.len() - 1],
+        target_entity,
+    );
+    commands.spawn_bundle((chain_target_joint_builder,));
+}
+enum DifferenceType {
+    Positive,
+    Negative,
+}
+
+fn join_nodes(
+    commands: &mut Commands,
+    nodes: &Vec<Entity>,
+    rope_local_start_point: Point2<f32>,
+    rope_local_end_point: Point2<f32>,
+    difference_type: DifferenceType,
+) {
+    let positive_diff_rope_joint_params =
+        BallJoint::new(rope_local_end_point, rope_local_start_point);
+    let negative_diff_rope_joint_params =
+        BallJoint::new(rope_local_start_point, rope_local_end_point);
+    let mut iter = nodes.windows(2);
+    while let Some([node_a, node_b]) = iter.next() {
+        let joint_params = match difference_type {
+            DifferenceType::Positive => positive_diff_rope_joint_params,
+            DifferenceType::Negative => negative_diff_rope_joint_params,
+        };
+
+        let joint_builder = JointBuilderComponent::new(joint_params, *node_a, *node_b);
+        commands.spawn_bundle((joint_builder,));
+    }
 }
 
 pub fn spawn_rope(
