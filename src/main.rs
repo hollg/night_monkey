@@ -60,26 +60,16 @@ impl FromWorld for Materials {
 }
 
 fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
-    spawn_anchor_point(
-        &mut commands,
-        materials.anchor_point_material.clone(),
-        -200.,
-        0.,
-    );
+    let anchors: Vec<(f32, f32)> = vec![(-200., 0.), (0., 0.), (200.0, 0.)];
 
-    spawn_anchor_point(
-        &mut commands,
-        materials.anchor_point_material.clone(),
-        0.,
-        0.,
-    );
-
-    spawn_anchor_point(
-        &mut commands,
-        materials.anchor_point_material.clone(),
-        200.,
-        0.,
-    );
+    for (x, y) in anchors.iter() {
+        spawn_anchor_point(
+            &mut commands,
+            materials.anchor_point_material.clone(),
+            *x,
+            *y,
+        );
+    }
 
     let ball_x = 30.;
     let ball_y = 20.;
@@ -89,13 +79,4 @@ fn setup_physics(mut commands: Commands, materials: Res<Materials>) {
         ball_x,
         ball_y,
     );
-
-    // spawn_rope(
-    //     &mut commands,
-    //     materials.rope_material.clone(),
-    //     &Point2::new(anchor_x, anchor_y),
-    //     &Point2::new(ball_x, ball_y),
-    //     anchor,
-    //     ball,
-    // )
 }
