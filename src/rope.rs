@@ -89,24 +89,25 @@ fn spawn_rope(
     // TODO: make one rope longer/shorter if distance isn't divisible by rope_length
     let node_length = 10.;
     let num_nodes = distance(origin_point, target_point) / node_length;
-    let chain_angle =
-        ((target_point.y - origin_point.y) / (target_point.x - origin_point.x)).atan();
 
+    // trigonometry!
+    let angle =
+        ((target_point.y - origin_point.y).abs() / (target_point.x - origin_point.x).abs()).atan();
+
+    // create nodes
     let mut nodes: Vec<Entity> = vec![];
     let mut current_node_start_point = *origin_point;
-
-    // create all equal-length nodes
     for _ in 0..num_nodes as u8 {
         let current_node_end_point = Point2::new(
-            current_node_start_point.x + (node_length * chain_angle.cos()),
-            current_node_start_point.y + (node_length * chain_angle.cos()),
+            current_node_start_point.x + (node_length * angle.cos()),
+            current_node_start_point.y + (node_length * angle.cos()),
         );
 
         nodes.push(spawn_node(
             commands,
             material.clone(),
             node_length,
-            chain_angle,
+            angle,
             &center(&current_node_start_point, &current_node_end_point),
         ));
 
@@ -129,6 +130,7 @@ fn spawn_rope(
         JointBuilderComponent::new(origin_chain_joint_params, origin_entity, nodes[0]);
     commands.spawn_bundle((origin_chain_joint_builder,));
 
+    // add joints to all pairs of neighbour nodes
     join_nodes(
         commands,
         &nodes,
