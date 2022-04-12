@@ -91,8 +91,7 @@ fn spawn_rope(
     let num_nodes = distance(origin_point, target_point) / node_length;
 
     // trigonometry!
-    let angle =
-        ((target_point.y - origin_point.y).abs() / (target_point.x - origin_point.x).abs()).atan();
+    let angle = (target_point.y - origin_point.y / target_point.x - origin_point.x).atan();
 
     // create nodes
     let mut nodes: Vec<Entity> = vec![];
@@ -173,7 +172,7 @@ fn spawn_node(
     middle_point: &Point2<f32>,
 ) -> Entity {
     let rope_body = RigidBodyBuilder::new_dynamic()
-        .rotation(angle)
+        .rotation(-angle)
         .translation(middle_point.x, middle_point.y);
 
     let rope_collider = ColliderBuilder::cuboid(node_length / 2., ROPE_WIDTH / 2.);
@@ -201,7 +200,7 @@ fn spawn_node(
 ///  spawns joints between each pair of neighbours in a vector of nodes
 fn join_nodes(
     commands: &mut Commands,
-    nodes: &Vec<Entity>,
+    nodes: &[Entity],
     rope_local_start_point: Point2<f32>,
     rope_local_end_point: Point2<f32>,
     difference_type: DifferenceType,
